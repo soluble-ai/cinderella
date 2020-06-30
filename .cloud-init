@@ -1,9 +1,3 @@
 #!/bin/bash
 
 ## This will be invoked via cloud-init as *root*
-
-
-cd /root
-curl https://raw.githubusercontent.com/soluble-ai/soluble-cli/master/linux-install.sh | sh
-mv /root/soluble /usr/local/bin/soluble
-chmod +x /usr/local/bin/soluble
