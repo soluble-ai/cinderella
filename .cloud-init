@@ -1,3 +1,30 @@
 #!/bin/bash
 
 ## This will be invoked via cloud-init as *root*
+
+openssl genrsa -out user.key 2048
+openssl req -key user.key -new -out user.csr -subj /CN=user -nodes
+openssl x509 -req -in user.csr \
+  -CA /var/lib/rancher/k3s/server/tls/client-ca.crt  \
+  -CAkey /var/lib/rancher/k3s/server/tls/client-ca.key \
+  -days 1 -CAcreateserial -out user.crt
+cp /etc/rancher/k3s/k3s.yaml user-config
+export KUBECONFIG=user-config
+kubectl config set-credentials user --embed-certs=true \
+  --client-certificate user.crt \
+  --client-key user.key
+rm user.crt user.key user.csr
+kubectl config set-context user --cluster default --user user --namespace user
+kubectl config rename-context default admin
+kubectl config use admin
+kubectl create clusterrolebinding user-view --clusterrole view --user user
+kubectl create ns user
+kubectl create rolebinding admin --clusterrole=admin \
+	--user user --namespace user
+cd ~soluble
+cat >> .bashrc  << EOF
+export KUBECONFIG=/home/soluble/.kube/config
+EOF
+mkdir .kube
+cp ~/user-config .kube/config
+chown -R soluble .kube
